@@ -1,0 +1,1 @@
+for (i <- 0 until 5; j <- 0 until 5; if i > j) println(i, j)
