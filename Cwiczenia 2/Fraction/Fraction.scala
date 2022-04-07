@@ -5,7 +5,7 @@ trait Fraction {
   def *(other: Fraction): Fraction
   def +(other: Fraction): Fraction
   def -(other: Fraction): Fraction
-  def /(other: Fraction): Any
+  def /(other: Fraction): Fraction
 }
 
 
@@ -15,15 +15,29 @@ trait Loggable {
 }
 
 
-trait Simplifiable {
-  def simplify()
+trait Simplifiable extends Fraction{
+  def simplify(fraction: Fraction): Fraction = {
+    var i = 2
+    var num = fraction.num
+    var denom = fraction.denom
+    while (i <= num || i <= denom) {
+      while (num % i == 0 && denom % i == 0) {
+        num = num / i
+        denom = denom / i
+      }
+      i += 1
+    }
+    Fraction(num, denom, false, true)
+  }
 }
 
 
 object Fraction {
-  def apply(num: Int, denom: Int, loggable: Boolean = false): Fraction =
+  def apply(num: Int, denom: Int, loggable: Boolean = false, simplifiable: Boolean = false): Fraction = {
     if (loggable) new LoggableImpl(num, denom)
+    else if (simplifiable) new SimplifiableImpl(num, denom)
     else new DefaultImpl(num, denom)
+  }
 
   private class DefaultImpl(val num: Int, val denom: Int) extends Fraction {
     override def *(other: Fraction): Fraction =
@@ -35,9 +49,11 @@ object Fraction {
     override def -(other: Fraction): Fraction =
       Fraction(this.num * other.denom - this.denom * other.num, this.denom * other.denom)
 
-    override def /(other: Fraction): Any =
+    override def /(other: Fraction): Fraction =
       if (other.num != 0)
         Fraction(this.num * other.denom, this.denom * other.num)
+      else
+        Fraction(0, 0)
 
     override def toString() = num.toString + "/" + denom.toString
   }
@@ -59,11 +75,23 @@ object Fraction {
       Fraction(this.num * other.denom - this.denom * other.num, this.denom * other.denom, true)
     }
 
-    override def /(other: Fraction): Any = {
+    override def /(other: Fraction): Fraction = {
       log(timeStamp, "dividing " + this.toString + " by " + other.toString)
       if (other.num != 0)
         Fraction(this.num * other.denom, this.denom * other.num, true)
+      else
+        Fraction(0, 0, true)
     }
+  }
+
+  private class SimplifiableImpl(num: Int, denom: Int) extends DefaultImpl(num, denom) with Simplifiable {
+    override def *(other: Fraction): Fraction = simplify(super.*(other))
+
+    override def +(other: Fraction): Fraction = simplify(super.+(other))
+
+    override def -(other: Fraction): Fraction = simplify(super.-(other))
+
+    override def /(other: Fraction): Fraction = simplify(super./(other))
   }
 }
 
@@ -80,5 +108,12 @@ object Appl {
     println(f1.toString + " + " + f2.toString + " = " + (f1 + f2))
     println(f1.toString + " - " + f2.toString + " = " + (f1 - f2))
     println(f1.toString + " / " + f2.toString + " = " + (f1 / f2))
+
+    val f4 = Fraction(1, 3, false, true)
+    val f5 = Fraction(1, 6, false, true)
+    println(f4.toString + " * " + f5.toString + " = " + (f4 * f5))
+    println(f4.toString + " + " + f5.toString + " = " + (f4 + f5))
+    println(f4.toString + " - " + f5.toString + " = " + (f4 - f5))
+    println(f4.toString + " / " + f5.toString + " = " + (f4 / f5))
   }
 }
